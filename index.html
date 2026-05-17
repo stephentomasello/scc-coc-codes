@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCC Dispatch — Codes Trainer</title>
+<style>
+  :root {
+    --navy: #0a1220;
+    --navy2: #101c30;
+    --blue: #1a3a6b;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --gold: #f59e0b;
+    --gold2: #fbbf24;
+    --green: #10b981;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --purple2: #c084fc;
+    --teal: #14b8a6;
+    --orange: #f97316;
+    --white: #f8fafc;
+    --gray: #94a3b8;
+    --card-bg: #121e32;
+    --card-border: #1e3a5f;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(59,130,246,0.035) 1px,transparent 1px);
+    background-size:40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+  .app { position:relative; z-index:1; max-width:920px; margin:0 auto; padding:20px; }
+
+  /* HEADER */
+  header { text-align:center; padding:22px 0 16px; }
+  .badge {
+    display:inline-block;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:white; font-size:10px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase;
+    padding:4px 12px; border-radius:20px; margin-bottom:10px;
+  }
+  header h1 {
+    font-size:27px; font-weight:800;
+    background:linear-gradient(135deg,var(--white),var(--purple2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text; letter-spacing:-0.5px;
+  }
+  header p { color:var(--gray); font-size:13px; margin-top:4px; }
+
+  /* STATS */
+  .stats-bar { display:flex; justify-content:center; gap:12px; margin:12px 0; flex-wrap:wrap; }
+  .stat {
+    background:var(--navy2); border:1px solid var(--card-border);
+    border-radius:10px; padding:7px 14px; text-align:center; min-width:75px;
+  }
+  .stat-val { font-size:20px; font-weight:800; color:var(--purple2); line-height:1; }
+  .stat-label { font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+  /* CATEGORY FILTER CHIPS */
+  .cat-row {
+    display:flex; justify-content:center; gap:6px;
+    flex-wrap:wrap; margin:10px 0 6px;
+  }
+  .cat-chip {
+    padding:5px 12px; border-radius:20px; font-size:11px; font-weight:700;
+    cursor:pointer; border:1.5px solid transparent; transition:all 0.12s;
+    opacity:0.5;
+  }
+  .cat-chip.active { opacity:1; }
+  .cat-chip.c-ten  { border-color:#3b82f6; color:#3b82f6; }
+  .cat-chip.c-ten.active  { background:rgba(59,130,246,0.15); }
+  .cat-chip.c-eleven { border-color:#14b8a6; color:#14b8a6; }
+  .cat-chip.c-eleven.active { background:rgba(20,184,166,0.15); }
+  .cat-chip.c-penal  { border-color:#ef4444; color:#ef4444; }
+  .cat-chip.c-penal.active  { background:rgba(239,68,68,0.15); }
+  .cat-chip.c-vehicle{ border-color:#f97316; color:#f97316; }
+  .cat-chip.c-vehicle.active{ background:rgba(249,115,22,0.15); }
+  .cat-chip.c-hs     { border-color:#10b981; color:#10b981; }
+  .cat-chip.c-hs.active     { background:rgba(16,185,129,0.15); }
+  .cat-chip.c-misc   { border-color:#a855f7; color:#a855f7; }
+  .cat-chip.c-misc.active   { background:rgba(168,85,247,0.15); }
+  .cat-chip.c-all    { border-color:var(--gold); color:var(--gold); }
+  .cat-chip.c-all.active    { background:rgba(245,158,11,0.15); }
+
+  /* CAT DOT */
+  .cat-dot {
+    display:inline-block; width:8px; height:8px;
+    border-radius:50%; margin-right:5px; flex-shrink:0;
+  }
+
+  /* TABS */
+  .mode-tabs { display:flex; justify-content:center; gap:8px; margin:12px 0; }
+  .tab {
+    background:var(--navy2); border:1px solid var(--card-border);
+    color:var(--gray); padding:8px 20px; border-radius:8px;
+    cursor:pointer; font-size:13px; font-weight:600;
+    transition:all 0.15s; display:flex; align-items:center; gap:6px;
+  }
+  .tab:hover { border-color:var(--purple); color:var(--white); }
+  .tab.active { background:var(--purple); border-color:var(--purple); color:white; box-shadow:0 0 16px rgba(168,85,247,0.4); }
+
+  /* PANELS */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ======================== FLASHCARD ======================== */
+  .fc-controls {
+    display:flex; justify-content:center; align-items:center;
+    gap:10px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .fc-controls select, .fc-controls button {
+    background:var(--navy2); border:1px solid var(--card-border);
+    color:var(--white); padding:7px 13px;
+    border-radius:8px; font-size:12px; cursor:pointer;
+  }
+  .fc-controls select:focus { outline:none; border-color:var(--purple); }
+  .btn-sm { background:var(--blue) !important; border-color:var(--accent) !important; transition:all 0.15s; }
+  .btn-sm:hover { background:var(--accent) !important; }
+
+  /* CARD */
+  .card-arena { perspective:1000px; height:290px; margin:0 auto 16px; max-width:640px; cursor:pointer; }
+  .card-inner {
+    position:relative; width:100%; height:100%;
+    transform-style:preserve-3d;
+    transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+  .card-inner.flipped { transform:rotateY(180deg); }
+  .card-face {
+    position:absolute; inset:0; border-radius:18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    padding:28px 32px; border:1.5px solid var(--card-border);
+    box-shadow:0 8px 32px rgba(0,0,0,0.45);
+  }
+  .card-front { background:linear-gradient(145deg,var(--card-bg),var(--navy2)); }
+  .card-back  { background:linear-gradient(145deg,#130c28,#1e1040); transform:rotateY(180deg); }
+
+  .card-tag { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--purple2); margin-bottom:12px; opacity:0.8; }
+  .card-code-text { font-size:50px; font-weight:900; letter-spacing:-1px; color:var(--white); text-align:center; line-height:1.1; }
+  .card-code-text.lg { font-size:36px; }
+  .card-code-text.md { font-size:26px; }
+  .card-code-text.sm { font-size:20px; font-weight:700; }
+  .card-back .card-code-text { font-size:22px; font-weight:700; color:var(--gold2); line-height:1.35; }
+  .card-back .card-code-text.verbiage { color:var(--purple2); font-size:18px; font-style:italic; letter-spacing:0.5px; }
+  .card-sub { font-size:12px; color:var(--gray); margin-top:10px; text-align:center; }
+  .card-counter { font-size:11px; color:var(--gray); position:absolute; top:14px; right:18px; }
+  .card-cat-badge {
+    position:absolute; top:14px; left:18px;
+    font-size:10px; font-weight:700; padding:3px 10px;
+    border-radius:20px; letter-spacing:0.5px;
+  }
+
+  /* HINT */
+  .hint-wrap { position:absolute; bottom:16px; right:18px; }
+  .hint-btn {
+    background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.35);
+    color:var(--purple2); border-radius:20px; padding:4px 12px;
+    font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s;
+    display:flex; align-items:center; gap:4px;
+  }
+  .hint-btn:hover { background:rgba(168,85,247,0.3); }
+  .hint-tooltip {
+    display:none; position:absolute; bottom:34px; right:0;
+    background:#1e1040; border:1px solid var(--purple);
+    border-radius:10px; padding:10px 14px; font-size:12px;
+    color:var(--white); max-width:280px; white-space:normal;
+    text-align:left; box-shadow:0 4px 20px rgba(0,0,0,0.5); z-index:10;
+    line-height:1.5;
+  }
+  .hint-tooltip.show { display:block; }
+  .hint-tooltip::after {
+    content:''; position:absolute; bottom:-6px; right:14px;
+    width:10px; height:10px; background:#1e1040;
+    border-right:1px solid var(--purple); border-bottom:1px solid var(--purple);
+    transform:rotate(45deg);
+  }
+
+  /* BOTH WAYS badge */
+  .bw-badge {
+    display:inline-block; background:rgba(245,158,11,0.18);
+    border:1px solid var(--gold); color:var(--gold);
+    font-size:10px; font-weight:700; padding:2px 8px;
+    border-radius:10px; margin-top:6px;
+  }
+
+  /* NAV */
+  .fc-nav { display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:10px; }
+  .nav-btn {
+    background:var(--navy2); border:1px solid var(--card-border);
+    color:var(--white); width:48px; height:48px; border-radius:50%;
+    font-size:20px; cursor:pointer; transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .nav-btn:hover { background:var(--blue); border-color:var(--accent); transform:scale(1.08); }
+  .flip-btn {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; color:white; padding:12px 32px;
+    border-radius:12px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .flip-btn:hover { transform:scale(1.04); box-shadow:0 4px 16px rgba(168,85,247,0.4); }
+
+  .progress-wrap { margin:8px auto 4px; max-width:640px; }
+  .progress-bar { height:4px; background:var(--navy2); border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--purple),var(--gold)); border-radius:4px; transition:width 0.2s; }
+
+  .know-btns { display:flex; justify-content:center; gap:12px; margin-top:12px; }
+  .know-btn {
+    padding:10px 26px; border-radius:10px; font-size:13px; font-weight:700;
+    cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:6px;
+  }
+  .know-btn.yes { background:rgba(16,185,129,0.18); border:1px solid var(--green); color:var(--green); }
+  .know-btn.yes:hover { background:var(--green); color:white; }
+  .know-btn.no { background:rgba(239,68,68,0.18); border:1px solid var(--red); color:var(--red); }
+  .know-btn.no:hover { background:var(--red); color:white; }
+
+  /* BACK SECTION LABELS */
+  .back-section { width:100%; text-align:center; }
+  .back-section + .back-section { margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); }
+  .back-section-label { font-size:9px; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:2px; margin-bottom:4px; }
+
+  /* ======================== QUIZ ======================== */
+  .quiz-settings {
+    display:flex; justify-content:center; gap:8px;
+    margin-bottom:14px; flex-wrap:wrap; align-items:center;
+  }
+  .quiz-settings label { font-size:12px; color:var(--gray); align-self:center; }
+  .quiz-settings button {
+    background:var(--navy2); border:1px solid var(--card-border);
+    color:var(--white); padding:7px 16px;
+    border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s;
+  }
+  .quiz-settings button.active { background:var(--purple); border-color:var(--purple); }
+  .quiz-settings button:hover:not(.active) { border-color:var(--purple); }
+
+  .quiz-card {
+    background:var(--navy2); border:1.5px solid var(--card-border);
+    border-radius:18px; padding:30px 28px; max-width:640px;
+    margin:0 auto 16px; box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  }
+  .quiz-q-label { font-size:11px; color:var(--gray); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; }
+  .quiz-question { font-size:42px; font-weight:900; color:var(--white); margin-bottom:4px; }
+  .quiz-question.md { font-size:26px; font-weight:700; }
+  .quiz-question.sm { font-size:18px; font-weight:700; line-height:1.35; }
+  .quiz-q-sub { font-size:12px; color:var(--purple2); margin-bottom:20px; font-style:italic; }
+  .quiz-q-counter { font-size:12px; color:var(--gray); margin-bottom:20px; }
+  .quiz-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .quiz-option {
+    background:var(--card-bg); border:1.5px solid var(--card-border);
+    color:var(--white); padding:13px 14px;
+    border-radius:12px; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all 0.12s; text-align:left; line-height:1.4;
+  }
+  .quiz-option:hover:not(:disabled) { border-color:var(--purple); background:rgba(168,85,247,0.1); }
+  .quiz-option.correct { border-color:var(--green)!important; background:rgba(16,185,129,0.15)!important; color:var(--green)!important; }
+  .quiz-option.wrong   { border-color:var(--red)!important;   background:rgba(239,68,68,0.12)!important;  color:var(--red)!important; }
+  .quiz-option.reveal  { border-color:var(--gold)!important;  background:rgba(245,158,11,0.1)!important;  color:var(--gold)!important; }
+  .quiz-feedback { text-align:center; font-size:14px; font-weight:700; margin-top:14px; min-height:22px; }
+  .quiz-feedback.correct { color:var(--green); }
+  .quiz-feedback.wrong   { color:var(--red); }
+  .quiz-next-btn {
+    display:block; margin:14px auto 0;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; color:white; padding:11px 34px;
+    border-radius:10px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .quiz-next-btn:hover { transform:scale(1.04); box-shadow:0 4px 16px rgba(168,85,247,0.4); }
+  .quiz-next-btn:disabled { opacity:0.3; cursor:default; transform:none; }
+
+  /* RESULTS */
+  .results-card {
+    background:var(--navy2); border:1.5px solid var(--card-border);
+    border-radius:18px; padding:40px 32px;
+    max-width:500px; margin:0 auto; text-align:center;
+  }
+  .results-icon { font-size:52px; margin-bottom:12px; }
+  .results-score {
+    font-size:60px; font-weight:900;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .results-label { color:var(--gray); font-size:14px; margin-bottom:18px; }
+  .results-grade { font-size:22px; font-weight:700; margin-bottom:22px; }
+  .results-restart {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; color:white; padding:12px 30px;
+    border-radius:12px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.15s; margin:6px;
+  }
+  .results-restart:hover { transform:scale(1.04); box-shadow:0 4px 16px rgba(168,85,247,0.4); }
+
+  /* ======================== BLITZ ======================== */
+  .blitz-settings {
+    display:flex; justify-content:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;
+  }
+  .blitz-settings label { font-size:12px; color:var(--gray); }
+  .blitz-settings button {
+    background:var(--navy2); border:1px solid var(--card-border);
+    color:var(--white); padding:7px 16px;
+    border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s;
+  }
+  .blitz-settings button.active { background:var(--gold); border-color:var(--gold); color:var(--navy); }
+
+  .blitz-hud {
+    display:flex; justify-content:space-between; align-items:center;
+    max-width:640px; margin:0 auto 12px; gap:10px;
+  }
+  .blitz-timer { font-size:32px; font-weight:900; color:var(--gold2); min-width:56px; text-align:center; font-variant-numeric:tabular-nums; }
+  .blitz-timer.urgent { color:var(--red); animation:pulse 0.5s infinite alternate; }
+  @keyframes pulse { from{opacity:1} to{opacity:0.5} }
+  .blitz-score-display { font-size:24px; font-weight:900; color:var(--purple2); }
+  .blitz-streak-display { font-size:13px; font-weight:700; color:var(--gold2); }
+
+  .blitz-card {
+    background:var(--navy2); border:1.5px solid var(--card-border);
+    border-radius:18px; padding:28px;
+    max-width:640px; margin:0 auto 12px; text-align:center;
+    min-height:190px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; position:relative;
+  }
+  .blitz-q-label { font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px; }
+  .blitz-q { font-size:44px; font-weight:900; color:var(--white); line-height:1.1; }
+  .blitz-q.md { font-size:26px; font-weight:700; }
+  .blitz-q.sm { font-size:18px; font-weight:700; line-height:1.4; }
+  .blitz-q-hint { font-size:11px; color:var(--purple2); margin-top:6px; font-style:italic; }
+
+  .blitz-input-wrap { display:flex; gap:8px; max-width:640px; margin:0 auto 8px; }
+  .blitz-input {
+    flex:1; background:var(--card-bg); border:1.5px solid var(--card-border);
+    color:var(--white); padding:13px 18px;
+    border-radius:12px; font-size:15px; font-weight:600; outline:none;
+    transition:border-color 0.15s; letter-spacing:0.5px;
+  }
+  .blitz-input:focus { border-color:var(--purple); }
+  .blitz-input.correct { border-color:var(--green); background:rgba(16,185,129,0.1); }
+  .blitz-input.wrong   { border-color:var(--red);   background:rgba(239,68,68,0.08); }
+  .blitz-submit {
+    background:var(--purple); border:none; color:white;
+    padding:13px 22px; border-radius:12px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.12s;
+  }
+  .blitz-submit:hover { background:var(--purple2); }
+  .blitz-skip {
+    background:transparent; border:1px solid var(--card-border);
+    color:var(--gray); padding:7px 20px; border-radius:8px;
+    font-size:12px; cursor:pointer; display:block; margin:0 auto 4px; transition:all 0.12s;
+  }
+  .blitz-skip:hover { border-color:var(--gray); color:var(--white); }
+  .blitz-feedback { text-align:center; font-size:13px; font-weight:600; min-height:20px; margin:4px 0; }
+
+  .start-overlay { text-align:center; padding:36px 20px; }
+  .start-overlay h2 { font-size:26px; font-weight:800; margin-bottom:10px; }
+  .start-overlay p { color:var(--gray); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .start-btn {
+    background:linear-gradient(135deg,var(--gold),var(--gold2));
+    border:none; color:var(--navy); padding:14px 40px;
+    border-radius:14px; font-size:16px; font-weight:800;
+    cursor:pointer; transition:all 0.15s; box-shadow:0 4px 20px rgba(245,158,11,0.4);
+  }
+  .start-btn:hover { transform:scale(1.05); box-shadow:0 6px 28px rgba(245,158,11,0.5); }
+
+  /* REFERENCE TABLE */
+  .ref-table-wrap { max-width:900px; margin:0 auto; }
+  .ref-search-wrap { display:flex; gap:10px; margin-bottom:14px; align-items:center; flex-wrap:wrap; }
+  .ref-search {
+    flex:1; background:var(--navy2); border:1.5px solid var(--card-border);
+    color:var(--white); padding:10px 16px; border-radius:10px;
+    font-size:13px; outline:none; transition:border-color 0.15s;
+    min-width:200px;
+  }
+  .ref-search:focus { border-color:var(--purple); }
+  .ref-search::placeholder { color:var(--gray); }
+  .ref-cat-select {
+    background:var(--navy2); border:1.5px solid var(--card-border);
+    color:var(--white); padding:10px 14px; border-radius:10px;
+    font-size:12px; cursor:pointer; outline:none;
+  }
+  .ref-cat-select:focus { border-color:var(--purple); }
+
+  .ref-section { margin-bottom:28px; }
+  .ref-section-title {
+    font-size:11px; font-weight:800; letter-spacing:2px;
+    text-transform:uppercase; padding:8px 14px; border-radius:8px;
+    margin-bottom:10px; display:flex; align-items:center; gap:8px;
+  }
+  .ref-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .ref-table thead tr { border-bottom:1px solid rgba(255,255,255,0.1); }
+  .ref-table th {
+    text-align:left; padding:8px 12px; font-size:10px; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase; color:var(--gray);
+  }
+  .ref-table tbody tr {
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    transition:background 0.1s;
+  }
+  .ref-table tbody tr:hover { background:rgba(168,85,247,0.07); }
+  .ref-table td { padding:9px 12px; vertical-align:top; line-height:1.4; }
+  .ref-table td:first-child { font-weight:800; font-size:13px; white-space:nowrap; }
+  .ref-table td:last-child { font-style:italic; color:var(--gray); font-size:11px; }
+  .bw-pill {
+    display:inline-block; background:rgba(245,158,11,0.15);
+    border:1px solid var(--gold); color:var(--gold);
+    font-size:9px; font-weight:700; padding:1px 7px; border-radius:10px;
+  }
+
+  /* Animations */
+  @keyframes slideIn { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:translateX(0)} }
+  .slide-in { animation:slideIn 0.17s ease forwards; }
+  @keyframes flashGreen { 0%,100%{box-shadow:0 8px 32px rgba(0,0,0,0.3)} 50%{box-shadow:0 0 30px rgba(16,185,129,0.6)} }
+  @keyframes flashRed   { 0%,100%{box-shadow:0 8px 32px rgba(0,0,0,0.3)} 50%{box-shadow:0 0 30px rgba(239,68,68,0.6)} }
+  .flash-correct { animation:flashGreen 0.3s ease; }
+  .flash-wrong   { animation:flashRed 0.3s ease; }
+
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--navy); }
+  ::-webkit-scrollbar-thumb { background:var(--blue); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="badge">🚨 Academy 26-01 — Day 2</div>
+    <h1>SCC Dispatch — Codes Trainer</h1>
+    <p>Ten/Eleven Codes · Penal · Vehicle · H&amp;S · Misc — <span id="total-count">0</span> codes loaded</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-val" id="stat-known">0</div><div class="stat-label">Known</div></div>
+    <div class="stat"><div class="stat-val" id="stat-left">0</div><div class="stat-label">To Learn</div></div>
+    <div class="stat"><div class="stat-val" id="stat-streak">0</div><div class="stat-label">Streak</div></div>
+    <div class="stat"><div class="stat-val" id="stat-best">0</div><div class="stat-label">Best</div></div>
+  </div>
+
+  <!-- CATEGORY CHIPS -->
+  <div class="cat-row">
+    <span class="cat-chip c-all active" onclick="toggleCat('all')">⚡ All</span>
+    <span class="cat-chip c-ten" onclick="toggleCat('ten')">📻 Ten Codes</span>
+    <span class="cat-chip c-eleven" onclick="toggleCat('eleven')">🚗 Eleven Codes</span>
+    <span class="cat-chip c-penal" onclick="toggleCat('penal')">⚖️ Penal</span>
+    <span class="cat-chip c-vehicle" onclick="toggleCat('vehicle')">🚘 Vehicle</span>
+    <span class="cat-chip c-hs" onclick="toggleCat('hs')">💊 H&amp;S / W&amp;I / B&amp;P</span>
+    <span class="cat-chip c-misc" onclick="toggleCat('misc')">🔢 Misc Codes</span>
+  </div>
+
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="tab active" onclick="switchMode('flash')">⚡ Flashcards</button>
+    <button class="tab" onclick="switchMode('quiz')">📋 Quiz</button>
+    <button class="tab" onclick="switchMode('blitz')">🔥 Blitz</button>
+    <button class="tab" onclick="switchMode('ref')">📖 Reference</button>
+  </div>
+
+  <!-- ======================== FLASHCARD PANEL ======================== -->
+  <div class="panel active" id="panel-flash">
+    <div class="fc-controls">
+      <label style="font-size:12px;color:var(--gray)">Show:</label>
+      <select id="fc-direction" onchange="fcRestart()">
+        <option value="code-meaning">Code → Meaning</option>
+        <option value="code-verbiage">Code → Verbiage</option>
+        <option value="meaning-code">Meaning → Code</option>
+        <option value="random">Random</option>
+      </select>
+      <label style="font-size:12px;color:var(--gray)">Filter:</label>
+      <select id="fc-filter" onchange="fcRestart()">
+        <option value="all">All Cards</option>
+        <option value="learning">Still Learning</option>
+        <option value="known">Known Only</option>
+      </select>
+      <button class="btn-sm" onclick="fcShuffle()">🔀 Shuffle</button>
+      <button class="btn-sm" onclick="fcRestart()">↩ Restart</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="fc-progress" style="width:0%"></div></div>
+    </div>
+
+    <div class="card-arena" id="card-arena" onclick="flipCard()">
+      <div class="card-inner" id="card-inner">
+        <div class="card-face card-front">
+          <span class="card-counter" id="fc-counter">1 / 0</span>
+          <div class="card-cat-badge" id="fc-cat-badge"></div>
+          <div class="card-tag" id="fc-front-tag">CODE</div>
+          <div class="card-code-text" id="fc-front-text">—</div>
+          <div class="card-sub" id="fc-front-sub">Click to reveal</div>
+          <div class="hint-wrap">
+            <button class="hint-btn" onclick="toggleHint(event)" id="hint-btn">💡 Hint</button>
+            <div class="hint-tooltip" id="hint-tooltip"></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-tag" id="fc-back-tag">MEANING</div>
+          <div class="back-section">
+            <div class="back-section-label" id="fc-back-label1">Meaning</div>
+            <div class="card-code-text" id="fc-back-text1">—</div>
+          </div>
+          <div class="back-section" id="fc-back-section2">
+            <div class="back-section-label" id="fc-back-label2">Verbiage (Radio)</div>
+            <div class="card-code-text verbiage" id="fc-back-text2">—</div>
+          </div>
+          <div id="fc-bw-badge"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-nav">
+      <button class="nav-btn" onclick="fcPrev()">‹</button>
+      <button class="flip-btn" onclick="flipCard()">Flip Card</button>
+      <button class="nav-btn" onclick="fcNext()">›</button>
+    </div>
+    <div class="know-btns">
+      <button class="know-btn no" onclick="markCard(false)">✗ Still Learning</button>
+      <button class="know-btn yes" onclick="markCard(true)">✓ Got It</button>
+    </div>
+  </div>
+
+  <!-- ======================== QUIZ PANEL ======================== -->
+  <div class="panel" id="panel-quiz">
+    <div class="quiz-settings">
+      <label>Mode:</label>
+      <button id="qm-cm" class="active" onclick="setQMode('code-meaning')">Code→Meaning</button>
+      <button id="qm-cv" onclick="setQMode('code-verbiage')">Code→Verbiage</button>
+      <button id="qm-mc" onclick="setQMode('meaning-code')">Meaning→Code</button>
+      <button id="qm-mix" onclick="setQMode('mixed')">Mixed</button>
+      <label>Count:</label>
+      <button id="qq-10" class="active" onclick="setQuizCount(10)">10</button>
+      <button id="qq-25" onclick="setQuizCount(25)">25</button>
+      <button id="qq-50" onclick="setQuizCount(50)">50</button>
+      <button id="qq-all" onclick="setQuizCount(9999)">All</button>
+    </div>
+
+    <div id="quiz-area">
+      <div class="quiz-card" id="quiz-card" style="display:none">
+        <div class="quiz-q-label" id="quiz-q-label">What does this code mean?</div>
+        <div class="quiz-question" id="quiz-question">—</div>
+        <div class="quiz-q-sub" id="quiz-q-sub"></div>
+        <div class="quiz-q-counter" id="quiz-q-counter">1 of 10</div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+        <button class="quiz-next-btn" id="quiz-next-btn" onclick="quizNext()" disabled>Next →</button>
+      </div>
+      <div id="quiz-results" style="display:none"></div>
+      <div id="quiz-start" style="text-align:center;padding:30px">
+        <div style="font-size:48px;margin-bottom:12px">📋</div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:8px">Multiple Choice Quiz</div>
+        <div style="color:var(--gray);font-size:14px;margin-bottom:22px">4 options · Choose mode and count above.<br>Category filter from the chips at the top applies.</div>
+        <button class="start-btn" onclick="startQuiz()">Start Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== BLITZ PANEL ======================== -->
+  <div class="panel" id="panel-blitz">
+    <div class="blitz-settings">
+      <label>Time:</label>
+      <button id="bt-60" class="active" onclick="setBlitzTime(60)">60s</button>
+      <button id="bt-90" onclick="setBlitzTime(90)">90s</button>
+      <button id="bt-120" onclick="setBlitzTime(120)">2 min</button>
+      <label>Mode:</label>
+      <button id="bd-cm" class="active" onclick="setBlitzMode('code-meaning')">Code→Meaning</button>
+      <button id="bd-cv" onclick="setBlitzMode('code-verbiage')">Code→Verbiage</button>
+      <button id="bd-mc" onclick="setBlitzMode('meaning-code')">Meaning→Code</button>
+    </div>
+
+    <div id="blitz-area">
+      <div class="start-overlay" id="blitz-start">
+        <div style="font-size:52px;margin-bottom:12px">🔥</div>
+        <h2>Speed Blitz</h2>
+        <p>Type as many correct answers as you can before time runs out.<br>
+        <strong>Tab</strong> to skip (−1 pt). <strong>Enter</strong> to submit.<br>
+        Flexible matching — minor typos are forgiven.</p>
+        <button class="start-btn" onclick="startBlitz()">Start Blitz</button>
+      </div>
+
+      <div id="blitz-game" style="display:none">
+        <div class="blitz-hud">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Time</div>
+            <div class="blitz-timer" id="blitz-timer">60</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Score</div>
+            <div class="blitz-score-display" id="blitz-score">0</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Streak</div>
+            <div class="blitz-streak-display">🔥 <span id="blitz-streak">0</span></div>
+          </div>
+        </div>
+
+        <div class="blitz-card" id="blitz-card">
+          <div class="blitz-q-label" id="blitz-q-label">What does this code mean?</div>
+          <div class="blitz-q" id="blitz-q">—</div>
+          <div class="blitz-q-hint" id="blitz-q-hint"></div>
+        </div>
+
+        <div class="blitz-feedback" id="blitz-feedback"></div>
+        <div class="blitz-input-wrap">
+          <input class="blitz-input" id="blitz-input" type="text" placeholder="Type your answer…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="blitzKeydown(event)">
+          <button class="blitz-submit" onclick="blitzSubmit()">Submit</button>
+        </div>
+        <button class="blitz-skip" onclick="blitzSkip()">Skip (−1 pt)</button>
+      </div>
+
+      <div id="blitz-results" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ======================== REFERENCE PANEL ======================== -->
+  <div class="panel" id="panel-ref">
+    <div class="ref-table-wrap">
+      <div class="ref-search-wrap">
+        <input class="ref-search" id="ref-search" placeholder="Search codes, meanings, verbiage…" oninput="renderRef()">
+        <select class="ref-cat-select" id="ref-cat" onchange="renderRef()">
+          <option value="all">All Categories</option>
+          <option value="ten">Ten Codes</option>
+          <option value="eleven">Eleven Codes</option>
+          <option value="penal">Penal Codes</option>
+          <option value="vehicle">Vehicle Codes</option>
+          <option value="hs">H&S / W&I / B&P</option>
+          <option value="misc">Misc Codes</option>
+        </select>
+      </div>
+      <div id="ref-content"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ======================== DATA ========================
+const CODES = [
+  // Ten Codes
+  {code:"10-1", meaning:"Receiving Poorly", verbiage:"TEN ONE", cat:"ten"},
+  {code:"10-2", meaning:"Receiving OK", verbiage:"TEN TWO", cat:"ten"},
+  {code:"10-3", meaning:"Change channels (specify)", verbiage:"TEN THREE", cat:"ten"},
+  {code:"10-4", meaning:"Message received and understood", verbiage:"TEN FOUR", cat:"ten"},
+  {code:"10-5", meaning:"Relay to:", verbiage:"TEN FIVE", cat:"ten"},
+  {code:"10-6", meaning:"Busy, stand by", verbiage:"TEN SIX", cat:"ten"},
+  {code:"10-7", meaning:"Out of service (location and nature)", verbiage:"TEN SEVEN", cat:"ten"},
+  {code:"10-7B", meaning:"Out of service, personal", verbiage:"TEN SEVEN PERSONAL", cat:"ten"},
+  {code:"10-7C", meaning:"Out of service, court", verbiage:"TEN SEVEN COURT", cat:"ten"},
+  {code:"10-7M", meaning:"Out of service, mechanical", verbiage:"TEN SEVEN MECHANICAL", cat:"ten"},
+  {code:"10-7N", meaning:"Out of service, not available", verbiage:"TEN SEVEN UNAVAILABLE", cat:"ten"},
+  {code:"10-7OD", meaning:"Off duty", verbiage:"TEN SEVEN O D", cat:"ten"},
+  {code:"10-7R", meaning:"Out of service, monitoring radio", verbiage:"(no standard verbiage)", cat:"ten"},
+  {code:"10-7T", meaning:"Out of service, training", verbiage:"TEN SEVEN TRAINING", cat:"ten"},
+  {code:"10-8", meaning:"In service", verbiage:"TEN EIGHT", cat:"ten"},
+  {code:"10-9", meaning:"Repeat", verbiage:"TEN NINE", cat:"ten"},
+  {code:"10-10", meaning:"Out of service, at home", verbiage:"TEN TEN", cat:"ten"},
+  {code:"10-12", meaning:"Visitor in vehicle/building transported", verbiage:"TEN TWELVE", cat:"ten"},
+  {code:"10-14", meaning:"Escort", verbiage:"TEN FOURTEEN", cat:"ten"},
+  {code:"10-15", meaning:"Prisoner in custody", verbiage:"TEN FIFTEEN", cat:"ten"},
+  {code:"10-16", meaning:"Pick up", verbiage:"TEN SIXTEEN", cat:"ten"},
+  {code:"10-19", meaning:"Return/enroute to station", verbiage:"TEN NINETEEN", cat:"ten"},
+  {code:"10-20", meaning:"Location", verbiage:"TEN TWENTY", cat:"ten"},
+  {code:"10-21", meaning:"Phone (specify who)", verbiage:"TEN TWENTY ONE", cat:"ten"},
+  {code:"10-21R", meaning:"Phone radio", verbiage:"TEN TWENTY ONE R (RADIO)", cat:"ten"},
+  {code:"10-22", meaning:"Cancel", verbiage:"TEN TWENTY TWO", cat:"ten"},
+  {code:"10-23", meaning:"Stand by", verbiage:"TEN TWENTY THREE", cat:"ten"},
+  {code:"10-27", meaning:"Request driver's license info (Wants and DMV)", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-28", meaning:"Vehicle registration", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-29", meaning:"Check wanted vehicle or property", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-29A", meaning:"Check wanted subject (wants only)", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-29C", meaning:"Check wanted subject (wants and records complete)", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-32", meaning:"Drowning", verbiage:"TEN THIRTY TWO", cat:"ten"},
+  {code:"10-33", meaning:"Alarm", verbiage:"TEN THIRTY THREE", cat:"ten"},
+  {code:"10-33A", meaning:"Alarm, audible", verbiage:"TEN THIRTY THREE AUDIBLE", cat:"ten"},
+  {code:"10-33B", meaning:"Alarm, bait tracker", verbiage:"TEN THIRTY THREE BRAVO", cat:"ten"},
+  {code:"10-33S", meaning:"Alarm, silent", verbiage:"TEN THIRTY THREE SILENT", cat:"ten"},
+  {code:"10-34", meaning:"Open door", verbiage:"TEN THIRTY FOUR", cat:"ten"},
+  {code:"10-35", meaning:"Open window", verbiage:"TEN THIRTY FIVE", cat:"ten"},
+  {code:"10-36", meaning:"Confidential information", verbiage:"TEN THIRTY SIX", cat:"ten"},
+  {code:"10-39", meaning:"Status of (specify)", verbiage:"TEN THIRTY NINE", cat:"ten"},
+  {code:"10-40", meaning:"Is (specify) available for a phone call?", verbiage:"TEN FORTY", cat:"ten"},
+  {code:"10-45", meaning:"Injured person", verbiage:"TEN FORTY FIVE", cat:"ten"},
+  {code:"10-46", meaning:"Sick person", verbiage:"TEN FORTY SIX", cat:"ten"},
+  {code:"10-49", meaning:"Proceed/proceeding to (specify)", verbiage:"TEN FORTY NINE", cat:"ten"},
+  {code:"10-50", meaning:"Take a report", verbiage:"TEN FIFTY", cat:"ten"},
+  {code:"10-51", meaning:"Intoxicated person", verbiage:"TEN FIVE ONE", cat:"ten"},
+  {code:"10-52", meaning:"Resuscitator", verbiage:"TEN FIVE TWO", cat:"ten"},
+  {code:"10-53", meaning:"Person down", verbiage:"TEN FIVE THREE", cat:"ten"},
+  {code:"10-54", meaning:"Possible dead body", verbiage:"TEN FIVE FOUR", cat:"ten"},
+  {code:"10-55", meaning:"Coroner's case", verbiage:"TEN FIVE FIVE", cat:"ten"},
+  {code:"10-56", meaning:"Suicide", verbiage:"TEN FIVE SIX", cat:"ten"},
+  {code:"10-56A", meaning:"Attempted suicide", verbiage:"TEN FIVE SIX A", cat:"ten"},
+  {code:"10-57", meaning:"Firearms discharged", verbiage:"TEN FIVE SEVEN", cat:"ten"},
+  {code:"10-58", meaning:"Garbage complaint", verbiage:"TEN FIVE EIGHT", cat:"ten"},
+  {code:"10-62", meaning:"Meet the citizen", verbiage:"TEN SIX TWO", cat:"ten"},
+  {code:"10-65", meaning:"Missing person", verbiage:"TEN SIX FIVE", cat:"ten"},
+  {code:"10-65AR", meaning:"Missing person, at risk", verbiage:"TEN SIX FIVE AT RISK", cat:"ten"},
+  {code:"10-65F", meaning:"Found missing person", verbiage:"TEN SIX FIVE FOUND", cat:"ten"},
+  {code:"10-65J", meaning:"Missing person, juvenile", verbiage:"TEN SIX FIVE J", cat:"ten"},
+  {code:"10-66", meaning:"Suspicious person", verbiage:"TEN SIX SIX", cat:"ten"},
+  {code:"10-66P", meaning:"Suspicious package", verbiage:"TEN SIX SIX PACKAGE", cat:"ten"},
+  {code:"10-66W", meaning:"Suspicious person with a weapon", verbiage:"TEN SIX SIX WEAPON", cat:"ten"},
+  {code:"10-67", meaning:"Person calling for help", verbiage:"TEN SIX SEVEN", cat:"ten"},
+  {code:"10-68", meaning:"Tree down", verbiage:"TEN SIX EIGHT", cat:"ten"},
+  {code:"10-69", meaning:"Wire down", verbiage:"TEN SIX NINE", cat:"ten"},
+  {code:"10-70", meaning:"Prowler", verbiage:"TEN SEVENTY", cat:"ten"},
+  {code:"10-71", meaning:"Person shot", verbiage:"TEN SEVENTY ONE", cat:"ten"},
+  {code:"10-72", meaning:"Person stabbed", verbiage:"TEN SEVENTY TWO", cat:"ten"},
+  {code:"10-73", meaning:"How do you receive?", verbiage:"TEN SEVENTY THREE", cat:"ten"},
+  {code:"10-80", meaning:"Explosion", verbiage:"TEN EIGHTY", cat:"ten"},
+  {code:"10-86", meaning:"Any traffic?", verbiage:"TEN EIGHTY SIX", cat:"ten"},
+  {code:"10-87", meaning:"Meet the officer", verbiage:"TEN EIGHTY SEVEN", cat:"ten"},
+  {code:"10-91", meaning:"Animal complaint", verbiage:"TEN NINETY ONE", cat:"ten"},
+  {code:"10-91A", meaning:"Vicious animal", verbiage:"TEN NINETY ONE A", cat:"ten"},
+  {code:"10-91B", meaning:"Noisy animal", verbiage:"TEN NINETY ONE B", cat:"ten"},
+  {code:"10-91C", meaning:"Injured animal", verbiage:"TEN NINETY ONE C", cat:"ten"},
+  {code:"10-91D", meaning:"Dead animal", verbiage:"TEN NINETY ONE D", cat:"ten"},
+  {code:"10-91E", meaning:"Animal bite", verbiage:"TEN NINETY ONE E", cat:"ten"},
+  {code:"10-91F", meaning:"Sick animal", verbiage:"TEN NINETY ONE F", cat:"ten"},
+  {code:"10-91H", meaning:"Stray horse", verbiage:"TEN NINETY ONE H", cat:"ten"},
+  {code:"10-95", meaning:"Pedestrian stop", verbiage:"TEN NINE FIVE", cat:"ten"},
+  {code:"10-96", meaning:"Pedestrian stop, send fill (Felony pedestrian stop)", verbiage:"TEN NINE SIX", cat:"ten"},
+  {code:"10-97", meaning:"Arrived at assignment", verbiage:"BOTH WAYS", cat:"ten"},
+  {code:"10-98", meaning:"Completed last assignment", verbiage:"BOTH WAYS", cat:"ten"},
+  // Eleven Codes
+  {code:"11-24", meaning:"Abandoned vehicle", verbiage:"ELEVEN TWENTY FOUR", cat:"eleven"},
+  {code:"11-25", meaning:"Traffic hazard", verbiage:"ELEVEN TWENTY FIVE", cat:"eleven"},
+  {code:"11-26", meaning:"Abandoned or found bicycle", verbiage:"ELEVEN TWENTY SIX", cat:"eleven"},
+  {code:"11-54", meaning:"Suspicious vehicle", verbiage:"ELEVEN FIVE FOUR", cat:"eleven"},
+  {code:"11-80", meaning:"Vehicle accident, major injury (ambulance needed)", verbiage:"ELEVEN EIGHTY", cat:"eleven"},
+  {code:"11-80CV", meaning:"Vehicle accident, major injury — County vehicle involved", verbiage:"11-80 COUNTY VEHICLE", cat:"eleven"},
+  {code:"11-81", meaning:"Vehicle accident, minor injury (ambulance needed)", verbiage:"ELEVEN EIGHTY ONE", cat:"eleven"},
+  {code:"11-81CV", meaning:"Vehicle accident, minor injury — County vehicle involved", verbiage:"11-81 COUNTY VEHICLE", cat:"eleven"},
+  {code:"11-82", meaning:"Vehicle accident, property damage", verbiage:"ELEVEN EIGHTY TWO", cat:"eleven"},
+  {code:"11-82CV", meaning:"Vehicle accident, property damage — County vehicle involved", verbiage:"11-82 COUNTY VEHICLE", cat:"eleven"},
+  {code:"11-83", meaning:"Vehicle accident, unknown injury — advise (ambulance)", verbiage:"ELEVEN EIGHTY THREE", cat:"eleven"},
+  {code:"11-83CV", meaning:"Vehicle accident, unknown injury — County vehicle involved", verbiage:"11-83 COUNTY VEHICLE", cat:"eleven"},
+  {code:"11-84", meaning:"Traffic control", verbiage:"ELEVEN EIGHTY FOUR", cat:"eleven"},
+  {code:"11-85", meaning:"Miscellaneous tow request", verbiage:"ELEVEN EIGHTY FIVE", cat:"eleven"},
+  {code:"11-95", meaning:"Vehicle stop", verbiage:"ELEVEN NINE FIVE", cat:"eleven"},
+  {code:"11-96", meaning:"Vehicle stop, send fill (Felony vehicle stop)", verbiage:"ELEVEN NINE SIX", cat:"eleven"},
+  // Penal Codes
+  {code:"148 PC", meaning:"Resisting arrest", verbiage:"ONE FORTY EIGHT", cat:"penal"},
+  {code:"166.4 PC", meaning:"Violation of a court order", verbiage:"ONE SIXTY SIX POINT FOUR", cat:"penal"},
+  {code:"187 PC", meaning:"Murder", verbiage:"ONE EIGHTY SEVEN", cat:"penal"},
+  {code:"207 PC", meaning:"Kidnapping", verbiage:"TWO OH SEVEN", cat:"penal"},
+  {code:"211 PC", meaning:"Robbery", verbiage:"TWO ELEVEN", cat:"penal"},
+  {code:"211A", meaning:"Armed robbery", verbiage:"211 ARMED", cat:"penal"},
+  {code:"211PS", meaning:"Purse snatch (robbery)", verbiage:"211 PURSE SNATCH", cat:"penal"},
+  {code:"211SA", meaning:"Strong armed robbery", verbiage:"211 STRONG ARM", cat:"penal"},
+  {code:"215 PC", meaning:"Carjacking", verbiage:"TWO FIFTEEN", cat:"penal"},
+  {code:"240 PC", meaning:"Assault", verbiage:"TWO FORTY", cat:"penal"},
+  {code:"242 PC", meaning:"Battery", verbiage:"TWO FORTY TWO", cat:"penal"},
+  {code:"240/242", meaning:"Assault and Battery", verbiage:"TWO FORTY TWO FORTY TWO", cat:"penal"},
+  {code:"245 PC", meaning:"Assault with a deadly weapon", verbiage:"TWO FORTY FIVE", cat:"penal"},
+  {code:"261 PC", meaning:"Rape", verbiage:"TWO SIXTY ONE", cat:"penal"},
+  {code:"273D", meaning:"Child abuse", verbiage:"TWO SEVENTY THREE DEE", cat:"penal"},
+  {code:"273.5 PC", meaning:"Spousal abuse (domestic violence)", verbiage:"TWO SEVENTY THREE POINT FIVE", cat:"penal"},
+  {code:"273.6 PC", meaning:"Violation of a restraining order", verbiage:"TWO SEVENTY THREE POINT SIX", cat:"penal"},
+  {code:"288 PC", meaning:"Sex offenses", verbiage:"TWO EIGHTY EIGHT", cat:"penal"},
+  {code:"290 PC", meaning:"Sex registrant", verbiage:"TWO NINETY", cat:"penal"},
+  {code:"314 PC", meaning:"Indecent exposure", verbiage:"THREE FOURTEEN", cat:"penal"},
+  {code:"368 PC", meaning:"Elder abuse (physical/financial)", verbiage:"THREE SIXTY EIGHT", cat:"penal"},
+  {code:"415 PC", meaning:"Disturbance", verbiage:"FOUR FIFTEEN", cat:"penal"},
+  {code:"415A", meaning:"Disturbance — physical fight", verbiage:"FOUR FIFTEEN A (ADAM)", cat:"penal"},
+  {code:"415E", meaning:"Disturbance — excessive noise", verbiage:"FOUR FIFTEEN E (EDWARD)", cat:"penal"},
+  {code:"415F", meaning:"Disturbance — family fight", verbiage:"FOUR FIFTEEN F (FAMILY)", cat:"penal"},
+  {code:"415FC", meaning:"Disturbance — firecrackers", verbiage:"FOUR FIFTEEN FIRE CRACKER", cat:"penal"},
+  {code:"415UNK", meaning:"Disturbance — unknown type", verbiage:"FOUR FIFTEEN UNKNOWN", cat:"penal"},
+  {code:"415W", meaning:"Disturbance — weapons involved", verbiage:"FOUR FIFTEEN WEAPON", cat:"penal"},
+  {code:"417 PC", meaning:"Brandishing a weapon", verbiage:"FOUR SEVENTEEN", cat:"penal"},
+  {code:"422 PC", meaning:"Criminal threats", verbiage:"FOUR TWENTY TWO", cat:"penal"},
+  {code:"451 PC", meaning:"Arson", verbiage:"FOUR FIVE ONE", cat:"penal"},
+  {code:"459 PC", meaning:"Burglary", verbiage:"FOUR FIVE NINE", cat:"penal"},
+  {code:"459VEH", meaning:"Burglary to a vehicle", verbiage:"459 VEHICLE", cat:"penal"},
+  {code:"470 PC", meaning:"Forgery", verbiage:"FOUR SEVENTY", cat:"penal"},
+  {code:"476 PC", meaning:"Bad checks", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"484 PC", meaning:"Theft", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"487 PC", meaning:"Grand theft", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"488 PC", meaning:"Petty theft", verbiage:"FOUR EIGHTY EIGHT", cat:"penal"},
+  {code:"496 PC", meaning:"Receiving/possession of stolen property", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"530.5 PC", meaning:"Identity theft", verbiage:"FIVE THIRTY POINT FIVE", cat:"penal"},
+  {code:"537 PC", meaning:"Defrauding an innkeeper", verbiage:"FIVE THIRTY SEVEN", cat:"penal"},
+  {code:"594 PC", meaning:"Malicious mischief", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"594VEH", meaning:"Malicious mischief/vandalism to vehicle", verbiage:"FIVE NINE FOUR VEHICLE", cat:"penal"},
+  {code:"597 PC", meaning:"Cruelty to animals", verbiage:"BOTH WAYS", cat:"penal"},
+  {code:"602 PC", meaning:"Trespassing", verbiage:"SIX OH TWO", cat:"penal"},
+  {code:"647B PC", meaning:"Solicit for prostitution", verbiage:"SIX FORTY SEVEN B (BRAVO)", cat:"penal"},
+  {code:"647F PC", meaning:"Drunk in public", verbiage:"SIX FORTY SEVEN F (FRANK)", cat:"penal"},
+  {code:"653M PC", meaning:"Obscene or harassing phone calls", verbiage:"SIX FIFTY THREE M", cat:"penal"},
+  {code:"664 PC", meaning:"Attempted crime", verbiage:"SIX SIX FOUR", cat:"penal"},
+  {code:"4532 PC", meaning:"Escape", verbiage:"FORTY FIVE THIRTY TWO", cat:"penal"},
+  {code:"12020 PC", meaning:"Illegal weapons", verbiage:"TWELVE OH TWENTY", cat:"penal"},
+  {code:"12025 PC", meaning:"Carrying a concealed weapon", verbiage:"TWELVE OH TWENTY FIVE", cat:"penal"},
+  // Vehicle Codes
+  {code:"4000a VC", meaning:"Expired registration", verbiage:"FOUR THOUSAND A", cat:"vehicle"},
+  {code:"10851 VC", meaning:"Stolen vehicle", verbiage:"TEN EIGHT FIVE ONE", cat:"vehicle"},
+  {code:"10851R", meaning:"Recovered stolen vehicle", verbiage:"10851 R", cat:"vehicle"},
+  {code:"12500a VC", meaning:"Unlicensed driver", verbiage:"TWELVE FIVE HUNDRED A", cat:"vehicle"},
+  {code:"14601a VC", meaning:"Driving with a suspended driver's license", verbiage:"FOURTEEN SIX OH ONE A", cat:"vehicle"},
+  {code:"20001 VC", meaning:"Hit and run — injury or death", verbiage:"TWENTY THOUSAND ONE", cat:"vehicle"},
+  {code:"20002 VC", meaning:"Hit and run — property damage only", verbiage:"TWENTY THOUSAND TWO", cat:"vehicle"},
+  {code:"22350 VC", meaning:"Speeding", verbiage:"TWENTY TWO THREE FIFTY", cat:"vehicle"},
+  {code:"22500 VC", meaning:"Parking violation", verbiage:"TWENTY TWO FIVE HUNDRED", cat:"vehicle"},
+  {code:"22507 VC", meaning:"Disabled parking violation", verbiage:"TWENTY TWO FIVE OH SEVEN", cat:"vehicle"},
+  {code:"22651 VC", meaning:"General category for a towed vehicle", verbiage:"TWENTY TWO SIX FIVE ONE", cat:"vehicle"},
+  {code:"23103 VC", meaning:"Reckless driving", verbiage:"TWENTY THREE ONE OH THREE", cat:"vehicle"},
+  {code:"23109 VC", meaning:"Speed contest", verbiage:"TWENTY THREE ONE OH NINE", cat:"vehicle"},
+  {code:"23152 VC", meaning:"Misdemeanor DUI — alcohol or drugs", verbiage:"TWENTY THREE ONE FIVE TWO", cat:"vehicle"},
+  // H&S / W&I / B&P
+  {code:"11300 H&S", meaning:"Narcotics", verbiage:"ELEVEN THREE HUNDRED", cat:"hs"},
+  {code:"11350 H&S", meaning:"Possession of a controlled substance", verbiage:"ELEVEN THREE FIFTY", cat:"hs"},
+  {code:"11550 H&S", meaning:"Under the influence/use of a controlled substance", verbiage:"ELEVEN FIVE FIFTY", cat:"hs"},
+  {code:"25662 B&P", meaning:"Minor in possession of alcohol", verbiage:"TWENTY FIVE SIX SIX TWO", cat:"hs"},
+  {code:"5150 W&I", meaning:"Mentally disabled person", verbiage:"FIFTY ONE FIFTY", cat:"hs"},
+  // Misc
+  {code:"Code 1", meaning:"At your convenience", verbiage:"CODE ONE", cat:"misc"},
+  {code:"Code 2", meaning:"Urgent — no red lights and siren", verbiage:"CODE TWO", cat:"misc"},
+  {code:"Code 3", meaning:"Emergency — use red lights and siren", verbiage:"CODE THREE", cat:"misc"},
+  {code:"Code 4", meaning:"No further assistance needed", verbiage:"CODE FOUR", cat:"misc"},
+  {code:"Code 5", meaning:"Stakeout", verbiage:"CODE FIVE", cat:"misc"},
+  {code:"Code 6 A&D", meaning:"Armed and dangerous", verbiage:"CODE SIX ARMED AND DANGEROUS", cat:"misc"},
+  {code:"Code 6F", meaning:"Felony want", verbiage:"CODE SIX FRANK", cat:"misc"},
+  {code:"Code 6H", meaning:"Hazard potential", verbiage:"CODE SIX HENRY", cat:"misc"},
+  {code:"Code 6M", meaning:"Misdemeanor want", verbiage:"CODE SIX MARY", cat:"misc"},
+  {code:"Code 7", meaning:"Mealtime", verbiage:"CODE SEVEN", cat:"misc"},
+  {code:"Code 10", meaning:"Bomb threat", verbiage:"CODE TEN", cat:"misc"},
+  {code:"Code 20", meaning:"Officer needs assistance — Emergency", verbiage:"CODE TWENTY", cat:"misc"},
+  {code:"Code 22", meaning:"Restricted radio traffic (Code 2/3 only)", verbiage:"CODE TWENTY TWO", cat:"misc"},
+  {code:"Code 30", meaning:"Officer needs assistance — Major emergency", verbiage:"CODE THIRTY", cat:"misc"},
+  {code:"Code 33", meaning:"Emergency — do not transmit (restricted radio traffic)", verbiage:"CODE THIRTY THREE", cat:"misc"},
+  {code:"Code 1000", meaning:"Plane crash", verbiage:"CODE ONE THOUSAND", cat:"misc"},
+  {code:"904", meaning:"Fire", verbiage:"NINE OH FOUR", cat:"misc"},
+  {code:"952", meaning:"Report on conditions", verbiage:"NINE FIVE TWO", cat:"misc"},
+  {code:"956", meaning:"Ready for assignment (RFA)", verbiage:"NINE FIVE SIX", cat:"misc"},
+];
+
+document.getElementById('total-count').textContent = CODES.length;
+
+// ======================== CATEGORY COLORS ========================
+const CAT_COLORS = {
+  ten:'#3b82f6', eleven:'#14b8a6', penal:'#ef4444',
+  vehicle:'#f97316', hs:'#10b981', misc:'#a855f7'
+};
+const CAT_LABELS = {
+  ten:'Ten Codes', eleven:'Eleven Codes', penal:'Penal Codes',
+  vehicle:'Vehicle Codes', hs:'H&S / W&I / B&P', misc:'Misc Codes'
+};
+
+// ======================== GLOBAL STATE ========================
+let known = new Set(JSON.parse(localStorage.getItem('scc-codes-known') || '[]'));
+let globalStreak = 0, bestStreak = 0;
+try { bestStreak = parseInt(localStorage.getItem('scc-codes-best') || '0'); } catch(e){}
+let activeCats = new Set(['all']);
+updateStats();
+
+function saveKnown() {
+  localStorage.setItem('scc-codes-known', JSON.stringify([...known]));
+  localStorage.setItem('scc-codes-best', bestStreak);
+  updateStats();
+}
+function updateStats() {
+  document.getElementById('stat-known').textContent = known.size;
+  document.getElementById('stat-left').textContent = CODES.length - known.size;
+  document.getElementById('stat-streak').textContent = globalStreak;
+  document.getElementById('stat-best').textContent = bestStreak;
+}
+
+// ======================== CATEGORY FILTER ========================
+function toggleCat(cat) {
+  if (cat === 'all') {
+    activeCats = new Set(['all']);
+  } else {
+    activeCats.delete('all');
+    activeCats.has(cat) ? activeCats.delete(cat) : activeCats.add(cat);
+    if (activeCats.size === 0) activeCats = new Set(['all']);
+  }
+  document.querySelectorAll('.cat-chip').forEach(el => {
+    const c = el.onclick.toString().match(/'([^']+)'/)[1];
+    el.classList.toggle('active', activeCats.has(c));
+  });
+  fcRestart();
+}
+
+function getFilteredCodes() {
+  if (activeCats.has('all')) return CODES;
+  return CODES.filter(c => activeCats.has(c.cat));
+}
+
+// ======================== MODE SWITCHING ========================
+function switchMode(mode) {
+  const modes = ['flash','quiz','blitz','ref'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', modes[i] === mode));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + mode).classList.add('active');
+  if (mode === 'flash') fcRestart();
+  if (mode === 'ref') renderRef();
+}
+
+// ======================== FLASHCARD MODE ========================
+let fcDeck = [], fcIndex = 0, fcFlipped = false, hintVisible = false;
+let fcCurrentDir = 'code-meaning';
+
+function getFcDeck() {
+  const filter = document.getElementById('fc-filter').value;
+  let pool = getFilteredCodes();
+  if (filter === 'learning') pool = pool.filter(c => !known.has(c.code));
+  if (filter === 'known') pool = pool.filter(c => known.has(c.code));
+  return pool;
+}
+
+function fcRestart() {
+  fcDeck = getFcDeck();
+  fcIndex = 0; fcFlipped = false;
+  document.getElementById('card-inner').classList.remove('flipped');
+  showFcCard();
+}
+
+function fcShuffle() {
+  fcDeck = getFcDeck();
+  shuffle(fcDeck);
+  fcIndex = 0; fcFlipped = false;
+  document.getElementById('card-inner').classList.remove('flipped');
+  showFcCard();
+}
+
+function resolveDir() {
+  const d = document.getElementById('fc-direction').value;
+  if (d === 'random') return ['code-meaning','code-verbiage','meaning-code'][Math.floor(Math.random()*3)];
+  return d;
+}
+
+function showFcCard() {
+  if (!fcDeck.length) {
+    document.getElementById('fc-front-text').textContent = 'No cards';
+    document.getElementById('fc-front-sub').textContent = 'Adjust filter or category';
+    return;
+  }
+  const card = fcDeck[fcIndex];
+  const dir = resolveDir();
+  fcCurrentDir = dir;
+  fcFlipped = false; hintVisible = false;
+  document.getElementById('hint-tooltip').classList.remove('show');
+  document.getElementById('card-inner').classList.remove('flipped');
+
+  // Category badge
+  const catBadge = document.getElementById('fc-cat-badge');
+  catBadge.textContent = CAT_LABELS[card.cat] || '';
+  catBadge.style.background = (CAT_COLORS[card.cat] || '#666') + '22';
+  catBadge.style.color = CAT_COLORS[card.cat] || '#fff';
+  catBadge.style.border = '1px solid ' + (CAT_COLORS[card.cat] || '#666') + '66';
+
+  let frontText, frontTag, back1, back1Label, back2, back2Label, showBack2 = true;
+
+  if (dir === 'code-meaning') {
+    frontTag = 'CODE'; frontText = card.code;
+    back1 = card.meaning; back1Label = 'Meaning';
+    back2 = card.verbiage; back2Label = 'Radio Verbiage';
+  } else if (dir === 'code-verbiage') {
+    frontTag = 'CODE'; frontText = card.code;
+    back1 = card.verbiage; back1Label = 'Radio Verbiage';
+    back2 = card.meaning; back2Label = 'Meaning';
+  } else {
+    frontTag = 'MEANING'; frontText = card.meaning;
+    back1 = card.code; back1Label = 'Code';
+    back2 = card.verbiage; back2Label = 'Radio Verbiage';
+  }
+
+  document.getElementById('fc-front-tag').textContent = frontTag;
+  const ftel = document.getElementById('fc-front-text');
+  ftel.textContent = frontText;
+  ftel.className = 'card-code-text' + (frontText.length > 40 ? ' sm' : frontText.length > 18 ? ' md' : frontText.length > 8 ? ' lg' : '');
+  document.getElementById('fc-front-sub').textContent = known.has(card.code) ? '✓ Known · Click to flip' : 'Click to flip';
+  document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${fcDeck.length}`;
+
+  document.getElementById('fc-back-label1').textContent = back1Label;
+  const b1el = document.getElementById('fc-back-text1');
+  b1el.textContent = back1;
+  b1el.className = 'card-code-text' + (back1.length > 40 ? ' sm' : back1.length > 20 ? ' md' : '');
+  if (dir === 'code-verbiage') b1el.classList.add('verbiage');
+
+  document.getElementById('fc-back-label2').textContent = back2Label;
+  const b2el = document.getElementById('fc-back-text2');
+  b2el.textContent = back2;
+  b2el.className = 'card-code-text' + (back2.length > 40 ? ' sm' : back2.length > 20 ? ' md' : '');
+  if (dir !== 'code-verbiage') b2el.classList.add('verbiage');
+  document.getElementById('fc-back-section2').style.display = '';
+
+  // BOTH WAYS badge
+  document.getElementById('fc-bw-badge').innerHTML = card.verbiage === 'BOTH WAYS' ? '<span class="bw-badge">↕ BOTH WAYS</span>' : '';
+
+  // Hint
+  let hintText = '';
+  if (dir === 'code-meaning') hintText = `Starts with: "${card.meaning[0]}" — ${card.meaning.split(' ').length} word(s)`;
+  else if (dir === 'code-verbiage') hintText = `First word: "${card.verbiage.split(' ')[0]}" — ${card.verbiage.split(' ').length} words total`;
+  else hintText = `Code: ${card.code.length} chars, starts with "${card.code[0]}"`;
+  document.getElementById('hint-tooltip').textContent = hintText;
+
+  // Progress
+  document.getElementById('fc-progress').style.width = ((fcIndex + 1) / fcDeck.length * 100) + '%';
+
+  const arena = document.getElementById('card-arena');
+  arena.classList.remove('slide-in');
+  void arena.offsetWidth;
+  arena.classList.add('slide-in');
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('card-inner').classList.toggle('flipped', fcFlipped);
+  hintVisible = false;
+  document.getElementById('hint-tooltip').classList.remove('show');
+}
+function fcNext() { if (!fcDeck.length) return; fcIndex = (fcIndex+1)%fcDeck.length; showFcCard(); }
+function fcPrev() { if (!fcDeck.length) return; fcIndex = (fcIndex-1+fcDeck.length)%fcDeck.length; showFcCard(); }
+function markCard(isKnown) {
+  if (!fcDeck.length) return;
+  const card = fcDeck[fcIndex];
+  if (isKnown) { known.add(card.code); globalStreak++; if (globalStreak>bestStreak) bestStreak=globalStreak; }
+  else { known.delete(card.code); globalStreak = 0; }
+  saveKnown(); fcNext();
+}
+function toggleHint(e) {
+  e.stopPropagation(); hintVisible = !hintVisible;
+  document.getElementById('hint-tooltip').classList.toggle('show', hintVisible);
+}
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('panel-flash').classList.contains('active')) {
+    if (e.key==='ArrowRight'||e.key===' ') { e.preventDefault(); fcFlipped ? fcNext() : flipCard(); }
+    if (e.key==='ArrowLeft') fcPrev();
+    if (e.key==='y'||e.key==='Y') markCard(true);
+    if (e.key==='n'||e.key==='N') markCard(false);
+  }
+});
+fcRestart();
+
+// ======================== QUIZ MODE ========================
+let quizMode = 'code-meaning', quizCount = 10;
+let quizDeck = [], quizIndex = 0, quizScore = 0, quizAnswered = false;
+
+function setQMode(m) {
+  quizMode = m;
+  ['cm','cv','mc','mix'].forEach((s,i) => {
+    document.getElementById('qm-'+s).classList.toggle('active', ['code-meaning','code-verbiage','meaning-code','mixed'][i]===m);
+  });
+}
+function setQuizCount(n) {
+  quizCount = n;
+  [10,25,50,'all'].forEach(c => {
+    document.getElementById('qq-'+(c==='all'?'all':c)).classList.toggle('active', c===n || (c==='all'&&n===9999));
+  });
+}
+
+function startQuiz() {
+  const pool = getFilteredCodes();
+  quizDeck = shuffle([...pool]).slice(0, Math.min(quizCount, pool.length));
+  quizIndex = 0; quizScore = 0;
+  document.getElementById('quiz-start').style.display='none';
+  document.getElementById('quiz-results').style.display='none';
+  document.getElementById('quiz-card').style.display='block';
+  showQuizQ();
+}
+
+function resolveQMode() {
+  if (quizMode==='mixed') return ['code-meaning','code-verbiage','meaning-code'][Math.floor(Math.random()*3)];
+  return quizMode;
+}
+
+function showQuizQ() {
+  if (quizIndex >= quizDeck.length) { showQuizResults(); return; }
+  const card = quizDeck[quizIndex];
+  const mode = resolveQMode();
+  quizAnswered = false;
+
+  let prompt, promptSub = '', answer, pool, optionFn;
+  if (mode==='code-meaning') {
+    prompt = card.code;
+    answer = card.meaning;
+    pool = getFilteredCodes().filter(c=>c.code!==card.code);
+    optionFn = c => c.meaning;
+    document.getElementById('quiz-q-label').textContent = 'What does this code mean?';
+  } else if (mode==='code-verbiage') {
+    prompt = card.code;
+    answer = card.verbiage;
+    pool = getFilteredCodes().filter(c=>c.code!==card.code && c.verbiage!==card.verbiage);
+    optionFn = c => c.verbiage;
+    document.getElementById('quiz-q-label').textContent = 'What is the radio verbiage for this code?';
+    promptSub = card.meaning;
+  } else {
+    prompt = card.meaning;
+    answer = card.code;
+    pool = getFilteredCodes().filter(c=>c.code!==card.code);
+    optionFn = c => c.code;
+    document.getElementById('quiz-q-label').textContent = 'What is the code for this?';
+  }
+
+  const qel = document.getElementById('quiz-question');
+  qel.textContent = prompt;
+  qel.className = 'quiz-question' + (prompt.length>30?' sm':prompt.length>14?' md':'');
+  document.getElementById('quiz-q-sub').textContent = promptSub;
+  document.getElementById('quiz-q-counter').textContent = `Question ${quizIndex+1} of ${quizDeck.length} · Score: ${quizScore}`;
+  document.getElementById('quiz-feedback').textContent='';
+  document.getElementById('quiz-feedback').className='quiz-feedback';
+  document.getElementById('quiz-next-btn').disabled=true;
+
+  const distractors = shuffle(pool).slice(0,3).map(optionFn);
+  const options = shuffle([answer, ...distractors]);
+  const container = document.getElementById('quiz-options');
+  container.innerHTML='';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className='quiz-option';
+    btn.textContent = opt;
+    btn.onclick = () => selectQuizOption(btn, opt, answer);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('quiz-card').classList.remove('slide-in');
+  void document.getElementById('quiz-card').offsetWidth;
+  document.getElementById('quiz-card').classList.add('slide-in');
+}
+
+function selectQuizOption(btn, chosen, correct) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  document.querySelectorAll('.quiz-option').forEach(o => o.disabled=true);
+  if (chosen===correct) {
+    btn.classList.add('correct');
+    quizScore++; globalStreak++;
+    if (globalStreak>bestStreak) bestStreak=globalStreak;
+    document.getElementById('quiz-feedback').textContent='✓ Correct!';
+    document.getElementById('quiz-feedback').className='quiz-feedback correct';
+  } else {
+    btn.classList.add('wrong'); globalStreak=0;
+    document.querySelectorAll('.quiz-option').forEach(o => { if(o.textContent===correct) o.classList.add('reveal'); });
+    document.getElementById('quiz-feedback').textContent=`✗ Correct: ${correct}`;
+    document.getElementById('quiz-feedback').className='quiz-feedback wrong';
+  }
+  saveKnown();
+  document.getElementById('quiz-next-btn').disabled=false;
+}
+
+function quizNext() { quizIndex++; showQuizQ(); }
+
+function showQuizResults() {
+  document.getElementById('quiz-card').style.display='none';
+  const pct = Math.round(quizScore/quizDeck.length*100);
+  const grade = pct>=90?'🏆 Outstanding!'  :pct>=80?'🎯 Great Job':pct>=65?'📚 Solid effort':pct>=50?'💪 Keep drilling':'🚨 More reps needed';
+  document.getElementById('quiz-results').style.display='block';
+  document.getElementById('quiz-results').innerHTML=`
+    <div class="results-card">
+      <div class="results-icon">${pct>=90?'🏆':pct>=70?'🎯':pct>=50?'📚':'💪'}</div>
+      <div class="results-score">${pct}%</div>
+      <div class="results-label">${quizScore} / ${quizDeck.length} correct</div>
+      <div class="results-grade">${grade}</div>
+      <button class="results-restart" onclick="startQuiz()">🔄 Retry Same</button>
+      <button class="results-restart" onclick="document.getElementById('quiz-start').style.display='block';document.getElementById('quiz-results').style.display='none'">⚙ Change Settings</button>
+    </div>`;
+}
+
+// ======================== BLITZ MODE ========================
+let blitzTime = 60, blitzBMode = 'code-meaning';
+let blitzTimer = null, blitzTimeLeft = 60, blitzScore = 0, blitzStreak = 0, blitzSkipped = 0;
+let blitzDeck = [], blitzIdx = 0;
+
+function setBlitzTime(t) { blitzTime = t; ['60','90','120'].forEach(s => document.getElementById('bt-'+s).classList.toggle('active', parseInt(s)===t)); }
+function setBlitzMode(m) {
+  blitzBMode = m;
+  ['cm','cv','mc'].forEach((s,i) => document.getElementById('bd-'+s).classList.toggle('active', ['code-meaning','code-verbiage','meaning-code'][i]===m));
+}
+
+function startBlitz() {
+  blitzDeck = shuffle([...getFilteredCodes()]);
+  blitzIdx=0; blitzScore=0; blitzStreak=0; blitzSkipped=0; blitzTimeLeft=blitzTime;
+  document.getElementById('blitz-start').style.display='none';
+  document.getElementById('blitz-results').style.display='none';
+  document.getElementById('blitz-game').style.display='block';
+  updateBlitzHUD(); showBlitzQ();
+  document.getElementById('blitz-input').focus();
+  blitzTimer = setInterval(()=>{ blitzTimeLeft--; updateBlitzHUD(); if(blitzTimeLeft<=0){clearInterval(blitzTimer);showBlitzResults();} },1000);
+}
+
+function showBlitzQ() {
+  const card = blitzDeck[blitzIdx % blitzDeck.length];
+  let q, hint='', label='';
+  if (blitzBMode==='code-meaning') { q=card.code; label='What does this code mean?'; hint=card.cat ? CAT_LABELS[card.cat]||'' : ''; }
+  else if (blitzBMode==='code-verbiage') { q=card.code; label='Radio verbiage for this code?'; hint='Say it out loud!'; }
+  else { q=card.meaning; label='What is the code?'; hint=CAT_LABELS[card.cat]||''; }
+  const el=document.getElementById('blitz-q');
+  el.textContent=q;
+  el.className='blitz-q'+(q.length>35?' sm':q.length>18?' md':'');
+  document.getElementById('blitz-q-label').textContent=label;
+  document.getElementById('blitz-q-hint').textContent=hint;
+  document.getElementById('blitz-input').value='';
+  document.getElementById('blitz-input').className='blitz-input';
+  document.getElementById('blitz-feedback').textContent='';
+  document.getElementById('blitz-input').focus();
+}
+function updateBlitzHUD() {
+  document.getElementById('blitz-timer').textContent=blitzTimeLeft;
+  document.getElementById('blitz-timer').className='blitz-timer'+(blitzTimeLeft<=10?' urgent':'');
+  document.getElementById('blitz-score').textContent=blitzScore;
+  document.getElementById('blitz-streak').textContent=blitzStreak;
+}
+
+function blitzSubmit() {
+  const input=document.getElementById('blitz-input');
+  const raw=input.value.trim();
+  if (!raw) return;
+  const ans=raw.toUpperCase();
+  const card=blitzDeck[blitzIdx%blitzDeck.length];
+  let correct='';
+  if (blitzBMode==='code-meaning') correct=card.meaning.toUpperCase();
+  else if (blitzBMode==='code-verbiage') correct=card.verbiage.toUpperCase();
+  else correct=card.code.toUpperCase();
+
+  const isCorrect = ans===correct ||
+    correct.startsWith(ans) ||
+    correct.replace(/[^A-Z0-9]/g,'').includes(ans.replace(/[^A-Z0-9]/g,'')) ||
+    levenshtein(ans, correct) <= Math.max(2, Math.floor(correct.length*0.18));
+
+  if (isCorrect) {
+    blitzScore++; blitzStreak++;
+    if (blitzStreak>bestStreak) bestStreak=blitzStreak;
+    globalStreak++; if(globalStreak>bestStreak) bestStreak=globalStreak;
+    known.add(card.code);
+    input.className='blitz-input correct';
+    document.getElementById('blitz-feedback').innerHTML=`<span style="color:var(--green)">✓ ${correct}</span>`;
+    document.getElementById('blitz-card').classList.add('flash-correct');
+    setTimeout(()=>document.getElementById('blitz-card').classList.remove('flash-correct'),300);
+  } else {
+    blitzStreak=0; globalStreak=0;
+    input.className='blitz-input wrong';
+    document.getElementById('blitz-feedback').innerHTML=`<span style="color:var(--red)">✗ ${correct}</span>`;
+    document.getElementById('blitz-card').classList.add('flash-wrong');
+    setTimeout(()=>document.getElementById('blitz-card').classList.remove('flash-wrong'),300);
+  }
+  saveKnown(); updateBlitzHUD(); blitzIdx++;
+  setTimeout(showBlitzQ, 650);
+}
+
+function blitzSkip() {
+  blitzScore=Math.max(0,blitzScore-1); blitzStreak=0; blitzSkipped++; blitzIdx++;
+  const card=blitzDeck[(blitzIdx-1)%blitzDeck.length];
+  let correct='';
+  if (blitzBMode==='code-meaning') correct=card.meaning;
+  else if (blitzBMode==='code-verbiage') correct=card.verbiage;
+  else correct=card.code;
+  document.getElementById('blitz-feedback').innerHTML=`<span style="color:var(--gray)">Skipped → ${correct}</span>`;
+  updateBlitzHUD(); setTimeout(showBlitzQ,400);
+}
+
+function blitzKeydown(e) {
+  if(e.key==='Enter') blitzSubmit();
+  if(e.key==='Tab'){ e.preventDefault(); blitzSkip(); }
+}
+
+function showBlitzResults() {
+  document.getElementById('blitz-game').style.display='none';
+  document.getElementById('blitz-results').style.display='block';
+  const total = blitzIdx - blitzSkipped;
+  const accuracy = total > 0 ? Math.round((blitzScore / total)*100) : 0;
+  document.getElementById('blitz-results').innerHTML=`
+    <div class="results-card">
+      <div class="results-icon">${blitzScore>=25?'🏆':blitzScore>=15?'🔥':blitzScore>=8?'📚':'💪'}</div>
+      <div class="results-score">${blitzScore}</div>
+      <div class="results-label">points in ${blitzTime}s · ${blitzSkipped} skipped · ${accuracy}% accuracy</div>
+      <div class="results-grade">${blitzScore>=25?'On Fire!':blitzScore>=15?'Great Run!':blitzScore>=8?'Getting There!':'Keep Grinding!'}</div>
+      <div style="color:var(--gray);font-size:13px;margin-bottom:20px">Best streak: ${bestStreak}</div>
+      <button class="results-restart" onclick="startBlitz()">🔄 Play Again</button>
+      <button class="results-restart" onclick="document.getElementById('blitz-start').style.display='block';document.getElementById('blitz-results').style.display='none'">⚙ Settings</button>
+    </div>`;
+}
+
+// ======================== REFERENCE TABLE ========================
+function renderRef() {
+  const q = (document.getElementById('ref-search').value||'').toLowerCase();
+  const catFilter = document.getElementById('ref-cat').value;
+  const catOrder = ['ten','eleven','penal','vehicle','hs','misc'];
+  const groups = {};
+  catOrder.forEach(c => groups[c]=[]);
+  CODES.forEach(card => {
+    if (catFilter !== 'all' && card.cat !== catFilter) return;
+    if (q && !card.code.toLowerCase().includes(q) && !card.meaning.toLowerCase().includes(q) && !card.verbiage.toLowerCase().includes(q)) return;
+    groups[card.cat].push(card);
+  });
+  let html = '';
+  catOrder.forEach(cat => {
+    if (!groups[cat].length) return;
+    if (catFilter!=='all' && cat!==catFilter) return;
+    const color = CAT_COLORS[cat]||'#fff';
+    html += `<div class="ref-section">
+      <div class="ref-section-title" style="background:${color}18;color:${color}">
+        <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>
+        ${CAT_LABELS[cat]}
+        <span style="font-size:10px;opacity:0.6;font-weight:600">(${groups[cat].length})</span>
+      </div>
+      <table class="ref-table">
+        <thead><tr><th>Code</th><th>Meaning</th><th>Radio Verbiage</th></tr></thead>
+        <tbody>`;
+    groups[cat].forEach(card => {
+      const vb = card.verbiage==='BOTH WAYS'
+        ? '<span class="bw-pill">BOTH WAYS</span>'
+        : card.verbiage;
+      html += `<tr><td style="color:${color}">${card.code}</td><td>${card.meaning}</td><td>${vb}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  if (!html) html = '<div style="text-align:center;color:var(--gray);padding:40px">No matching codes found.</div>';
+  document.getElementById('ref-content').innerHTML = html;
+}
+
+// ======================== UTILS ========================
+function shuffle(arr) {
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+function levenshtein(a,b) {
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+</script>
+</body>
+</html>
